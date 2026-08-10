@@ -1,0 +1,118 @@
+<header class="app-header">
+  <span class="logo"><span class="logo-accent">Un</span>gezogen</span>
+</header>
+
+<main class="main">
+  <h2 class="card-title">Neue Strafe erfassen</h2>
+
+  <div class="field-group">
+    <label class="field-label" for="name-input">Person</label>
+    <div class="autocomplete-wrap">
+      <input
+        id="name-input"
+        class="field-input"
+        type="text"
+        placeholder="Name eingeben …"
+        [value]="nameInput()"
+        (input)="onNameInput($any($event.target).value)"
+        (focus)="showNameDropdown.set(true)"
+        (blur)="onNameBlur()"
+        autocomplete="off"
+      />
+      @if (nameInput()) {
+        <button class="clear-btn" type="button" (mousedown)="selectUser('')" aria-label="Eingabe löschen">&#x2715;</button>
+      }
+      @if (showNameDropdown() && filteredUsers().length > 0) {
+        <ul class="dropdown" role="listbox">
+          @for (user of filteredUsers(); track user) {
+            <li class="dropdown-item" role="option" (mousedown)="selectUser(user)">
+              {{ user }}
+            </li>
+          }
+        </ul>
+      }
+    </div>
+    @if (showUnknownHint()) {
+      <p class="hint-unknown">Person nicht bekannt</p>
+    }
+  </div>
+
+  <div class="field-group" [class.field-group--locked]="isLocked()">
+    <label class="field-label" for="item-input">Posten</label>
+    <div class="autocomplete-wrap">
+      <input
+        id="item-input"
+        class="field-input"
+        type="text"
+        placeholder="Posten auswählen …"
+        [value]="itemInput()"
+        (input)="onItemInput($any($event.target).value)"
+        (focus)="showItemDropdown.set(true)"
+        (blur)="onItemBlur()"
+        autocomplete="off"
+        [disabled]="isLocked()"
+      />
+      @if (selectedItem()) {
+        <button class="clear-btn" type="button" (mousedown)="clearItem()" aria-label="Eingabe löschen">&#x2715;</button>
+      }
+      @if (showItemDropdown() && filteredItems().length > 0) {
+        <ul class="dropdown" role="listbox">
+          @for (item of filteredItems(); track item.label) {
+            <li
+              class="dropdown-item"
+              [class.dropdown-item--split]="item.price !== null"
+              [class.dropdown-item--custom]="item.price === null"
+              role="option"
+              (mousedown)="selectItem(item)"
+            >
+              <span class="item-label">{{ item.label }}</span>
+              @if (item.price !== null) {
+                <span class="item-price">{{ formatPrice(item.price) }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+
+  @if (selectedItem() && isCustomItem()) {
+    <div class="field-group">
+      <label class="field-label" for="custom-label-input">Bezeichnung</label>
+      <input
+        id="custom-label-input"
+        class="field-input"
+        type="text"
+        placeholder="z. B. Abendessen bezahlt …"
+        [value]="customLabel()"
+        (input)="customLabel.set($any($event.target).value)"
+        autocomplete="off"
+      />
+    </div>
+  }
+
+  @if (selectedItem()) {
+    <div class="field-group">
+      <label class="field-label" for="price-input">Betrag</label>
+      <div class="price-input-wrap">
+        <input
+          id="price-input"
+          class="field-input price-input"
+          [class.field-input--error]="isPriceInvalid()"
+          type="text"
+          inputmode="numeric"
+          [value]="customPrice()"
+          (input)="onPriceInput($any($event.target).value)"
+          (focus)="selectAll($event)"
+          autocomplete="off"
+        />
+        <span class="price-currency">€</span>
+      </div>
+      @if (isPriceInvalid()) {
+        <p class="hint-unknown">Bitte eine gültige Zahl eingeben (z. B. 12,50)</p>
+      }
+    </div>
+  }
+
+  <button class="btn-primary" type="button" [disabled]="isSubmitDisabled()">Hinzufügen</button>
+</main>
