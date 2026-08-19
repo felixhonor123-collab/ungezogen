@@ -1,0 +1,62 @@
+<div class="page">
+  <header class="app-header">
+    <span class="logo"><span class="logo-accent">Un</span>gezogen</span>
+  </header>
+
+  <main class="main">
+    @if (laden()) {
+      <div class="sk sk--card sk--name-block"></div>
+      @for (_ of [1,2,3]; track $index) {
+        <div class="sk sk--card sk--schuld-item"></div>
+      }
+    } @else if (fehler()) {
+      <div class="fehler-state">
+        <p class="fehler-titel">Benutzer nicht gefunden</p>
+        <p class="fehler-sub">Dieser Link ist ungültig oder abgelaufen.</p>
+      </div>
+    } @else {
+      <div class="benutzer-header">
+        <app-avatar
+          [vorname]="benutzer()!.vorname"
+          [nachname]="benutzer()!.nachname"
+          [foto]="benutzer()!.foto"
+          style="--avatar-size: 4rem"
+        />
+        <div class="benutzer-name-block">
+          @if (benutzer()!.spitzname) {
+            <h1 class="benutzer-name">{{ benutzer()!.spitzname }}</h1>
+            <p class="benutzer-realname">{{ benutzerName(benutzer()!) }}</p>
+          } @else {
+            <h1 class="benutzer-name">{{ benutzerName(benutzer()!) }}</h1>
+          }
+          <p class="benutzer-sub">Deine offenen Schulden</p>
+        </div>
+      </div>
+
+      @if (schulden().length === 0) {
+        <div class="leer-state">
+          <span class="leer-icon">🎉</span>
+          <p class="leer-titel">Keine offenen Schulden!</p>
+          <p class="leer-sub">Du hast aktuell nichts zu zahlen.</p>
+        </div>
+      } @else {
+        <ul class="schulden-liste">
+          @for (s of schulden(); track s.id) {
+            <li class="schuld-item">
+              <div class="schuld-info">
+                <span class="schuld-bezeichnung">{{ s.bezeichnung }}</span>
+                <span class="schuld-datum">{{ formatDatumMitUhrzeit(s.datum) }}</span>
+              </div>
+              <span class="schuld-betrag">{{ formatBetrag(s.betrag) }}</span>
+            </li>
+          }
+        </ul>
+
+        <div class="gesamt-zeile">
+          <span class="gesamt-label">Gesamt offen</span>
+          <span class="gesamt-betrag">{{ formatBetrag(gesamt()) }}</span>
+        </div>
+      }
+    }
+  </main>
+</div>

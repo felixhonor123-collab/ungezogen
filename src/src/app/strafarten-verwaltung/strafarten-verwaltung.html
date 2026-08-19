@@ -1,0 +1,98 @@
+<header class="app-header">
+  <span class="logo"><span class="logo-accent">Un</span>gezogen</span>
+  <button class="logout-btn" type="button" (click)="logout()" aria-label="Abmelden">&#x2192; Abmelden</button>
+</header>
+
+<main class="main">
+  <h2 class="card-title">Strafarten</h2>
+
+  @if (laden()) {
+    @for (_ of [1,2,3]; track $index) {
+      <div class="sk sk--item"></div>
+    }
+  } @else {
+    <ul class="strafarten-liste">
+      @for (s of strafarten(); track s.id) {
+        <li class="strafart-item">
+          <div class="strafart-info">
+            <span class="strafart-bezeichnung">{{ s.bezeichnung }}</span>
+          </div>
+          <div class="strafart-right">
+            <span class="strafart-betrag">{{ formatBetrag(s.betrag) }}</span>
+            <button class="btn-loeschen" type="button" (click)="loeschenAnfragen(s.id)" aria-label="Löschen">&#x2715;</button>
+          </div>
+        </li>
+      }
+      @if (strafarten().length === 0 && !zeigeForm()) {
+        <div class="leer-state">
+          <span class="leer-icon">📋</span>
+          <p class="leer-titel">Keine Strafarten angelegt</p>
+          <p class="leer-sub">Füge unten eine neue Strafart hinzu.</p>
+        </div>
+      }
+    </ul>
+  }
+
+  @if (zeigeForm()) {
+    <div class="form-card">
+      <div class="field-group">
+        <label class="field-label" for="neue-bezeichnung">Bezeichnung *</label>
+        <input
+          id="neue-bezeichnung"
+          class="field-input"
+          type="text"
+          placeholder="z. B. Zu spät erschienen …"
+          [value]="neueBezeichnung()"
+          (input)="neueBezeichnung.set($any($event.target).value)"
+          (keyup.escape)="formAbbrechen()"
+          autocomplete="off"
+          autofocus
+        />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="neue-betrag">Betrag (€) *</label>
+        <div class="price-input-wrap">
+          <input
+            id="neue-betrag"
+            class="field-input price-input"
+            [class.field-input--error]="betragUngueltig()"
+            type="text"
+            inputmode="numeric"
+            placeholder="z. B. 5,00"
+            [value]="neueBetragRaw()"
+            (input)="neueBetragRaw.set($any($event.target).value)"
+            (keyup.enter)="speichern()"
+            (keyup.escape)="formAbbrechen()"
+            autocomplete="off"
+          />
+          <span class="price-currency">€</span>
+        </div>
+        @if (betragUngueltig()) {
+          <p class="hint-error">Bitte eine gültige Zahl eingeben (z. B. 5,00)</p>
+        }
+      </div>
+      <div class="form-actions">
+        <button class="btn-ghost" type="button" (click)="formAbbrechen()">Abbrechen</button>
+        <button
+          class="btn-primary"
+          type="button"
+          [disabled]="!formValid() || speichert()"
+          (click)="speichern()"
+        >
+          @if (speichert()) { Wird gespeichert … } @else { Hinzufügen }
+        </button>
+      </div>
+    </div>
+  } @else {
+    <button class="btn-primary" type="button" (click)="formOeffnen()">+ Neue Strafart</button>
+  }
+</main>
+
+@if (confirmId()) {
+  <app-confirm-dialog
+    text="Strafart wirklich löschen?"
+    confirmLabel="Löschen"
+    (bestaetigt)="loeschenBestaetigt()"
+    (abbrechen)="confirmId.set(null)"
+  />
+}

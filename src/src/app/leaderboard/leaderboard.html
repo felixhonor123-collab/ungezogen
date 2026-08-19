@@ -1,0 +1,51 @@
+<div class="page">
+  <header class="app-header">
+    <button class="btn-back" type="button" (click)="zurueck()" aria-label="Zurück">&#8592;</button>
+    <span class="logo"><span class="logo-accent">Un</span>gezogen</span>
+    <div style="width: 44px"></div>
+  </header>
+
+  <main class="main">
+    <h2 class="card-title">Leaderboard</h2>
+    <p class="subtitle">Gesamtstrafen aller Schützen</p>
+
+    @if (laden()) {
+      @for (_ of [1,2,3,4]; track $index) {
+        <div class="sk sk--item"></div>
+      }
+    } @else if (fehler()) {
+      <div class="leer-state">
+        <span class="leer-icon">⚠️</span>
+        <p class="leer-titel">Daten konnten nicht geladen werden</p>
+      </div>
+    } @else if (eintraege().length === 0) {
+      <div class="leer-state">
+        <span class="leer-icon">🏆</span>
+        <p class="leer-titel">Noch keine Einträge</p>
+        <p class="leer-sub">Sobald Strafen erfasst werden, erscheinen sie hier.</p>
+      </div>
+    } @else {
+      <ol class="board-liste">
+        @for (e of eintraege(); track e.id; let i = $index) {
+          <li class="board-item" [class.board-item--gold]="i === 0" [class.board-item--silber]="i === 1" [class.board-item--bronze]="i === 2">
+            <span class="rang-badge" [class]="rangKlasse(i + 1)">{{ rangIcon(i + 1) }}</span>
+            <app-avatar [vorname]="e.vorname" [nachname]="e.nachname" [foto]="e.foto" style="--avatar-size: 2.8rem" />
+            <div class="board-info">
+              <span class="board-name">{{ anzeigeName(e) }}</span>
+              @if (e.spitzname) {
+                <span class="board-realname">{{ benutzerName(e) }}</span>
+              }
+              @if (e.bezeichnung) {
+                <span class="board-bezeichnung">{{ e.bezeichnung }}</span>
+              }
+            </div>
+            <div class="board-right">
+              <span class="board-betrag" [class.board-betrag--gold]="i === 0">{{ formatBetrag(e.gesamtStrafe) }}</span>
+              <span class="board-anzahl">{{ e.anzahlStrafen }} {{ e.anzahlStrafen === 1 ? 'Strafe' : 'Strafen' }}</span>
+            </div>
+          </li>
+        }
+      </ol>
+    }
+  </main>
+</div>

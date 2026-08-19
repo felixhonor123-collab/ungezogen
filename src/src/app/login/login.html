@@ -1,0 +1,40 @@
+<div class="login-page">
+  <header class="app-header">
+    <span class="logo"><span class="logo-accent">Un</span>gezogen</span>
+  </header>
+
+  <main class="main">
+    <h2 class="title">Anmelden</h2>
+    <p class="subtitle">Bitte gib deinen 4-stelligen Code ein</p>
+
+    <div class="pin-row" (paste)="onPaste($event)">
+      @for (d of digits(); track $index) {
+        <input
+          #digitInput
+          class="pin-input"
+          [class.pin-input--filled]="d !== ''"
+          [class.pin-input--error]="errorMsg()"
+          type="text"
+          inputmode="numeric"
+          maxlength="1"
+          [value]="d"
+          (input)="onDigitInput($index, $event)"
+          (keydown)="onKeydown($index, $event)"
+          autocomplete="one-time-code"
+        />
+      }
+    </div>
+
+    @if (errorMsg()) {
+      <p class="error-msg">{{ errorMsg() }}</p>
+    }
+
+    @if (isLoading()) {
+      <p class="loading-msg">Wird geprüft …</p>
+    }
+
+    <button class="btn-leaderboard" type="button" (click)="zumLeaderboard()">
+      🏆 Leaderboard ansehen
+    </button>
+  </main>
+</div>

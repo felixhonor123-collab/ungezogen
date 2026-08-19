@@ -1,0 +1,78 @@
+<header class="app-header">
+  <span class="logo"><span class="logo-accent">Un</span>gezogen</span>
+  <button class="logout-btn" type="button" (click)="logout()" aria-label="Abmelden">&#x2192; Abmelden</button>
+</header>
+
+<main class="main">
+  <h2 class="card-title">Strafen</h2>
+
+  @if (benutzerListe().length > 1) {
+    <div class="filter-row">
+      <button
+        class="filter-btn"
+        [class.filter-btn--active]="filterBenutzer() === ''"
+        type="button"
+        (click)="filterBenutzer.set('')"
+      >Alle</button>
+      @for (b of benutzerListe(); track b.id) {
+        <button
+          class="filter-btn"
+          [class.filter-btn--active]="filterBenutzer() === b.id"
+          type="button"
+          (click)="filterBenutzer.set(b.id)"
+        >{{ benutzerAnzeigeName(b) }}</button>
+      }
+    </div>
+  }
+
+  @if (laden()) {
+    @for (_ of [1,2,3,4,5]; track $index) {
+      <div class="sk sk--item"></div>
+    }
+  } @else if (gefilterteEintraege().length === 0) {
+    <div class="leer-state">
+      <span class="leer-icon">🎉</span>
+      <p class="leer-titel">Keine Strafen vorhanden</p>
+      <p class="leer-sub">Erfasse eine neue Strafe über den Tab „Erfassen".</p>
+    </div>
+  } @else {
+    <ul class="strafen-liste">
+      @for (e of gefilterteEintraege(); track e.schuld.id) {
+        <li class="strafen-item" [class.strafen-item--bezahlt]="e.schuld.bezahlt">
+          <div class="strafen-info">
+            <div class="strafen-name-row">
+              <span class="strafen-person">{{ benutzerAnzeigeName(e.benutzer) }}</span>
+              @if (e.schuld.bezahlt) {
+                <span class="badge-bezahlt">Bezahlt</span>
+              } @else {
+                <span class="badge-offen">Offen</span>
+              }
+            </div>
+            <span class="strafen-bezeichnung">{{ e.schuld.bezeichnung }}</span>
+            <span class="strafen-datum">{{ formatDatum(e.schuld.datum) }}</span>
+          </div>
+          <div class="strafen-right">
+            <span class="strafen-betrag" [class.strafen-betrag--bezahlt]="e.schuld.bezahlt">
+              {{ formatBetrag(e.schuld.betrag) }}
+            </span>
+            <button
+              class="btn-loeschen"
+              type="button"
+              (click)="loeschenAnfragen(e.schuld.id)"
+              aria-label="Strafe löschen"
+            >&#x2715;</button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</main>
+
+@if (confirmSchuldId()) {
+  <app-confirm-dialog
+    text="Strafe wirklich löschen?"
+    confirmLabel="Löschen"
+    (bestaetigt)="loeschenBestaetigt()"
+    (abbrechen)="confirmSchuldId.set(null)"
+  />
+}

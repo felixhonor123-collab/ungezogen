@@ -1,0 +1,203 @@
+<header class="app-header">
+  <span class="logo"><span class="logo-accent">Un</span>gezogen</span>
+  <button class="logout-btn" type="button" (click)="logout()" aria-label="Abmelden">&#x2192; Abmelden</button>
+</header>
+
+<main class="main">
+  <button class="btn-back" type="button" (click)="zurueck()">&#8592; Zurück</button>
+  <h2 class="card-title">Alle Benutzer</h2>
+
+  <button class="btn-outline" type="button" [disabled]="downloading()" (click)="qrPdfDownload()">
+    @if (downloading()) { Wird erstellt … } @else { QR-Codes als PDF herunterladen }
+  </button>
+
+  <button class="btn-outline" type="button" [disabled]="exportiert()" (click)="csvExport()">
+    @if (exportiert()) { Wird exportiert … } @else { Schulden als CSV exportieren }
+  </button>
+
+  <ul class="benutzer-liste">
+    @if (laden()) {
+      @for (_ of [1,2,3,4]; track $index) {
+        <li class="benutzer-item benutzer-item--skeleton">
+          <div class="benutzer-name-row">
+            <div class="benutzer-info">
+              <div class="sk sk--name"></div>
+              <div class="sk sk--telefon"></div>
+            </div>
+          </div>
+        </li>
+      }
+    } @else {
+      @for (b of benutzer(); track b.id) {
+        <li class="benutzer-item" (click)="navigateToDetail(b.id)">
+          <div class="benutzer-name-row">
+            <app-avatar [vorname]="b.vorname" [nachname]="b.nachname" [foto]="b.foto" />
+            <div class="benutzer-info">
+              <span class="benutzer-name">{{ benutzerName(b) }}</span>
+              @if (b.bezeichnung) {
+                <span class="benutzer-telefon">{{ b.bezeichnung }}</span>
+              }
+            </div>
+            <span class="benutzer-arrow">&#8250;</span>
+          </div>
+        </li>
+      }
+    }
+  </ul>
+
+  @if (zeigeNeuerBenutzerForm()) {
+    <div class="neuer-benutzer-form">
+      <div class="name-row">
+        <div class="field-group">
+          <label class="field-label" for="neuer-vorname">Vorname *</label>
+          <input
+            id="neuer-vorname"
+            class="field-input"
+            type="text"
+            placeholder="Vorname …"
+            [value]="neuerVorname()"
+            (input)="neuerVorname.set($any($event.target).value)"
+            (keyup.escape)="neuerBenutzerAbbrechen()"
+            autocomplete="off"
+            autofocus
+          />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="neuer-nachname">Nachname</label>
+          <input
+            id="neuer-nachname"
+            class="field-input"
+            type="text"
+            placeholder="Nachname …"
+            [value]="neuerNachname()"
+            (input)="neuerNachname.set($any($event.target).value)"
+            (keyup.escape)="neuerBenutzerAbbrechen()"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="neuer-bezeichnung">Bezeichnung</label>
+        <input
+          id="neuer-bezeichnung"
+          class="field-input"
+          type="text"
+          placeholder="z. B. Mitbewohner, Kollege …"
+          [value]="neuerBezeichnung()"
+          (input)="neuerBezeichnung.set($any($event.target).value)"
+          (keyup.escape)="neuerBenutzerAbbrechen()"
+          autocomplete="off"
+        />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="neuer-spitzname">Spitzname</label>
+        <input
+          id="neuer-spitzname"
+          class="field-input"
+          type="text"
+          placeholder="z. B. Schorsch, Luki …"
+          [value]="neuerSpitzname()"
+          (input)="neuerSpitzname.set($any($event.target).value)"
+          (keyup.escape)="neuerBenutzerAbbrechen()"
+          autocomplete="off"
+        />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="neuer-telefon">Telefon</label>
+        <input
+          id="neuer-telefon"
+          class="field-input"
+          type="tel"
+          placeholder="z. B. 0151 12345678"
+          [value]="neuerTelefon()"
+          (input)="neuerTelefon.set($any($event.target).value)"
+          (keyup.enter)="neuerBenutzerSpeichern()"
+          (keyup.escape)="neuerBenutzerAbbrechen()"
+          autocomplete="off"
+        />
+      </div>
+      <div class="form-actions">
+        <button class="btn-ghost" type="button" (click)="neuerBenutzerAbbrechen()">Abbrechen</button>
+        <button
+          class="btn-primary"
+          type="button"
+          [disabled]="!neuerFormValid() || speichert()"
+          (click)="neuerBenutzerSpeichern()"
+        >
+          @if (speichert()) { Wird gespeichert … } @else { Hinzufügen }
+        </button>
+      </div>
+    </div>
+  } @else {
+    <button class="btn-primary" type="button" (click)="neuerBenutzerOeffnen()">+ Neuer Benutzer</button>
+  }
+
+  @if (zeigeNeueStrafForm()) {
+    <div class="neuer-benutzer-form">
+      <div class="field-group">
+        <label class="field-label" for="straf-benutzer">Benutzer *</label>
+        <select
+          id="straf-benutzer"
+          class="field-input"
+          [value]="strafBenutzerId()"
+          (change)="strafBenutzerId.set($any($event.target).value)"
+          (keyup.escape)="neueStrafAbbrechen()"
+        >
+          <option value="">Benutzer auswählen …</option>
+          @for (b of benutzer(); track b.id) {
+            <option [value]="b.id">{{ benutzerName(b) }}</option>
+          }
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="straf-bezeichnung">Bezeichnung *</label>
+        <input
+          id="straf-bezeichnung"
+          class="field-input"
+          type="text"
+          placeholder="z. B. Zu spät erschienen …"
+          [value]="strafBezeichnung()"
+          (input)="strafBezeichnung.set($any($event.target).value)"
+          (keyup.escape)="neueStrafAbbrechen()"
+          autocomplete="off"
+          autofocus
+        />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="straf-betrag">Betrag (€) *</label>
+        <div class="price-input-wrap">
+          <input
+            id="straf-betrag"
+            class="field-input price-input"
+            [class.field-input--error]="strafBetragUngueltig()"
+            type="text"
+            inputmode="numeric"
+            placeholder="z. B. 5,00"
+            [value]="strafBetrag()"
+            (input)="strafBetrag.set($any($event.target).value)"
+            (keyup.enter)="neueStrafSpeichern()"
+            (keyup.escape)="neueStrafAbbrechen()"
+            autocomplete="off"
+          />
+          <span class="price-currency">€</span>
+        </div>
+        @if (strafBetragUngueltig()) {
+          <p class="hint-error">Bitte eine gültige Zahl eingeben (z. B. 5,00)</p>
+        }
+      </div>
+      <div class="form-actions">
+        <button class="btn-ghost" type="button" (click)="neueStrafAbbrechen()">Abbrechen</button>
+        <button
+          class="btn-primary"
+          type="button"
+          [disabled]="!strafFormValid() || strafSpeichert()"
+          (click)="neueStrafSpeichern()"
+        >
+          @if (strafSpeichert()) { Wird gespeichert … } @else { Hinzufügen }
+        </button>
+      </div>
+    </div>
+  } @else {
+    <button style="display: none;" class="btn-light-blue" type="button" (click)="neueStrafOeffnen()">+ Neue Strafe</button>
+  }
+</main>

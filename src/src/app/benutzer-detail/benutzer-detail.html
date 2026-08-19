@@ -1,0 +1,215 @@
+<header class="app-header">
+  <span class="logo">YouOwe<span class="logo-accent">Me</span></span>
+  <button class="logout-btn" type="button" (click)="logout()" aria-label="Abmelden">&#x2192; Abmelden</button>
+</header>
+
+<main class="main">
+  <button class="btn-back" type="button" (click)="zurueck()">&#8592; Alle Benutzer</button>
+
+  @if (laden()) {
+    <div class="sk sk--card sk--titel"></div>
+    <div class="sk sk--card sk--field-full"></div>
+    @for (_ of [1,2,3]; track $index) {
+      <div class="sk sk--card sk--schuld-item"></div>
+    }
+  } @else if (benutzer()) {
+    <div class="titel-zeile">
+      <button class="btn-schnell" type="button" (click)="schuld_erfassen()">+ Schuld</button>
+
+      @if (bearbeitetName()) {
+        <div class="name-edit-form">
+          <div class="name-row">
+              <div class="edit-field-group">
+                <label class="field-label" for="edit-vorname">Vorname *</label>
+                <input id="edit-vorname" class="name-input" type="text" placeholder="Vorname …"
+                  [value]="editVorname()" (input)="editVorname.set($any($event.target).value)"
+                  (keyup.escape)="nameBearbeitenAbbrechen()" autocomplete="off" autofocus />
+              </div>
+              <div class="edit-field-group">
+                <label class="field-label" for="edit-nachname">Nachname</label>
+                <input id="edit-nachname" class="name-input" type="text" placeholder="Nachname …"
+                  [value]="editNachname()" (input)="editNachname.set($any($event.target).value)"
+                  (keyup.escape)="nameBearbeitenAbbrechen()" autocomplete="off" />
+              </div>
+            </div>
+            <div class="edit-field-group">
+              <label class="field-label" for="edit-bezeichnung">Bezeichnung</label>
+              <input id="edit-bezeichnung" class="name-input" type="text" placeholder="z. B. Mitbewohner, Kollege …"
+                [value]="editBezeichnung()" (input)="editBezeichnung.set($any($event.target).value)"
+                (keyup.escape)="nameBearbeitenAbbrechen()" autocomplete="off" />
+            </div>
+            <div class="edit-field-group">
+              <label class="field-label" for="edit-spitzname">Spitzname</label>
+              <input id="edit-spitzname" class="name-input" type="text" placeholder="z. B. Schorsch, Luki …"
+                [value]="editSpitzname()" (input)="editSpitzname.set($any($event.target).value)"
+                (keyup.escape)="nameBearbeitenAbbrechen()" autocomplete="off" />
+            </div>
+          <div class="edit-field-group">
+            <label class="field-label" for="edit-telefon">Telefon</label>
+            <input id="edit-telefon" class="name-input" type="tel" placeholder="z. B. 0151 12345678"
+              [value]="editTelefon()" (input)="editTelefon.set($any($event.target).value)"
+              (keyup.enter)="nameBearbeitenSpeichern()" (keyup.escape)="nameBearbeitenAbbrechen()" autocomplete="off" />
+          </div>
+          <div class="name-edit-actions">
+            <button class="btn-ghost" type="button" (click)="nameBearbeitenAbbrechen()">Abbrechen</button>
+            <button class="btn-primary" type="button" [disabled]="!editFormValid() || speichertName()" (click)="nameBearbeitenSpeichern()">
+              @if (speichertName()) { … } @else { Speichern }
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="name-zeile">
+          <label class="avatar-btn" title="Foto ändern">
+            <app-avatar [vorname]="benutzer()!.vorname" [nachname]="benutzer()!.nachname" [foto]="benutzer()!.foto" />
+            <span class="avatar-btn-overlay">📷</span>
+            <input type="file" accept="image/*" capture="user" class="foto-input" (change)="fotoAendern($event)" />
+          </label>
+          <div class="name-info">
+            <h2 class="card-title">{{ benutzerName(benutzer()!) }}</h2>
+            @if (benutzer()!.spitzname) {
+              <span class="telefon-anzeige">„{{ benutzer()!.spitzname }}"</span>
+            }
+            @if (benutzer()!.telefon) {
+              <span class="telefon-anzeige">{{ benutzer()!.telefon }}</span>
+            }
+          </div>
+          <button class="btn-edit" type="button" (click)="nameBearbeitenStarten()" aria-label="Bearbeiten">&#9998;</button>
+        </div>
+      }
+    </div>
+
+    <div class="sort-row">
+      <button class="sort-btn" [class.sort-btn--active]="sortierung() === 'datum-desc'"  (click)="sortierung.set('datum-desc')">Datum ↓</button>
+      <button class="sort-btn" [class.sort-btn--active]="sortierung() === 'datum-asc'"   (click)="sortierung.set('datum-asc')">Datum ↑</button>
+      <button class="sort-btn" [class.sort-btn--active]="sortierung() === 'betrag-desc'" (click)="sortierung.set('betrag-desc')">Betrag ↓</button>
+      <button class="sort-btn" [class.sort-btn--active]="sortierung() === 'betrag-asc'"  (click)="sortierung.set('betrag-asc')">Betrag ↑</button>
+    </div>
+
+    @if (offeneSchulden().length === 0 && bezahlteSchulden().length === 0) {
+      <div class="leer-state">
+        <span class="leer-icon">🎉</span>
+        <p class="leer-titel">Keine Schulden vorhanden</p>
+        <p class="leer-sub">Tippe auf „+ Schuld" um eine neue Schuld zu erfassen.</p>
+      </div>
+    } @else if (offeneSchulden().length === 0) {
+      <div class="leer-state">
+        <span class="leer-icon">✅</span>
+        <p class="leer-titel">Keine offenen Schulden</p>
+        <p class="leer-sub">Alle Schulden sind beglichen.</p>
+      </div>
+    }
+
+    @if (offeneSchulden().length > 0) {
+      <div class="abschnitt-header" (click)="zeigeOffen.set(!zeigeOffen())">
+        <span class="abschnitt-titel">Offen ({{ offeneSchulden().length }})</span>
+        <span class="abschnitt-chevron">{{ zeigeOffen() ? '▲' : '▼' }}</span>
+      </div>
+
+      @if (zeigeOffen()) {
+        <ul class="schulden-liste">
+          @for (s of offeneSchulden(); track s.id) {
+            <li class="schuld-item-wrap"
+              (touchstart)="onSwipeStart(s.id, $event)"
+              (touchmove)="onSwipeMove(s.id, $event)"
+              (touchend)="onSwipeEnd(s.id)">
+              <div class="schuld-swipe-delete" [style.opacity]="(swipeOffsets()[s.id] ?? 0) < -10 ? 1 : 0">&#x2715;</div>
+              <div class="schuld-item" [style.transform]="swipeStyle(s.id)" [style.transition]="(swipeOffsets()[s.id] ?? 0) !== 0 ? 'none' : 'transform 0.25s ease'">
+                <div class="schuld-info">
+                  <span class="schuld-bezeichnung">{{ s.bezeichnung }}</span>
+                  <span class="schuld-datum">{{ formatDatumMitUhrzeit(s.datum) }}</span>
+                </div>
+                <div class="schuld-right">
+                  <button class="btn-bezahlt" type="button" (click)="schuld_bezahlt(s.id, $event)" aria-label="Als bezahlt markieren">Beglichen</button>
+                  <span class="schuld-betrag">{{ formatBetrag(s.betrag) }}</span>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <div class="gesamt-zeile">
+          <span class="gesamt-label">Gesamt offen</span>
+          <span class="gesamt-betrag">{{ formatBetrag(gesamtOffen()) }}</span>
+        </div>
+
+        @if (whatsappUebersichtUrl()) {
+          <button class="btn-whatsapp" type="button" (click)="sendWhatsappUebersicht()">
+            <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.534 5.858L.057 23.428a.75.75 0 0 0 .915.915l5.57-1.477A11.952 11.952 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.71 9.71 0 0 1-4.964-1.362l-.355-.212-3.683.976.991-3.594-.232-.371A9.712 9.712 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+            </svg>
+            Übersicht per WhatsApp senden
+          </button>
+        }
+      }
+    }
+
+    @if (bezahlteSchulden().length > 0) {
+      <div class="abschnitt-header abschnitt-header--bezahlt" (click)="zeigeBezahlt.set(!zeigeBezahlt())">
+        <span class="abschnitt-titel">Bezahlt ({{ bezahlteSchulden().length }})</span>
+        <span class="abschnitt-chevron">{{ zeigeBezahlt() ? '▲' : '▼' }}</span>
+      </div>
+
+      @if (zeigeBezahlt()) {
+        <ul class="schulden-liste schulden-liste--bezahlt">
+          @for (s of bezahlteSchulden(); track s.id) {
+            <li class="schuld-item schuld-item--bezahlt">
+              <div class="schuld-info">
+                <span class="schuld-bezeichnung">{{ s.bezeichnung }}</span>
+                <span class="schuld-datum">
+                  {{ formatDatumMitUhrzeit(s.datum) }}
+                  @if (s.bezahltAm) { · bezahlt {{ formatDatum(s.bezahltAm) }} }
+                </span>
+              </div>
+              <div class="schuld-right">
+                <button class="btn-wieder-offen" type="button" (click)="schuld_wieder_offen(s.id)" aria-label="Wieder als offen markieren">Offen</button>
+                <span class="schuld-betrag schuld-betrag--bezahlt">{{ formatBetrag(s.betrag) }}</span>
+                <button class="btn-loeschen" type="button" (click)="schuld_loeschen_anfragen(s.id)" aria-label="Schuld löschen">&#x2715;</button>
+              </div>
+            </li>
+          }
+        </ul>
+        <div class="gesamt-zeile gesamt-zeile--bezahlt">
+          <span class="gesamt-label">Gesamt bezahlt</span>
+          <span class="gesamt-betrag gesamt-betrag--bezahlt">{{ formatBetrag(gesamtBezahlt()) }}</span>
+        </div>
+      }
+    }
+
+    @if (qrUrl()) {
+      <div class="qr-section">
+        @if (benutzer()!.spitzname) {
+          <p class="qr-spitzname">{{ benutzer()!.spitzname }}</p>
+          <p class="qr-label">{{ benutzerName(benutzer()!) }}</p>
+        } @else {
+          <p class="qr-label">{{ benutzerName(benutzer()!) }}</p>
+        }
+        <app-qr-code [url]="qrUrl()" [size]="220" />
+        <p class="qr-hint">{{ qrUrl() }}</p>
+      </div>
+    }
+
+    <button class="btn-benutzer-loeschen" type="button" (click)="benutzer_loeschen_anfragen()">Benutzer löschen</button>
+  } @else {
+    <p class="keine-schulden">Benutzer nicht gefunden.</p>
+  }
+</main>
+
+@if (confirmSchuldId()) {
+  <app-confirm-dialog
+    text="Schuld wirklich löschen?"
+    confirmLabel="Löschen"
+    (bestaetigt)="schuld_loeschen_bestaetigt()"
+    (abbrechen)="confirmSchuldId.set(null)"
+  />
+}
+
+@if (confirmBenutzerLoeschen()) {
+  <app-confirm-dialog
+    [text]="'Benutzer ' + benutzerName(benutzer()!) + ' und alle Schulden wirklich löschen?'"
+    confirmLabel="Endgültig löschen"
+    phrase="WIRKLICH LÖSCHEN"
+    (bestaetigt)="benutzer_loeschen_bestaetigt()"
+    (abbrechen)="confirmBenutzerLoeschen.set(false)"
+  />
+}
